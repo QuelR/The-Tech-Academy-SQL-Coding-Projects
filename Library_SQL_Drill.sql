@@ -1,13 +1,5 @@
 CREATE DATABASE db_library2test
 
-DROP table tbl_bookAuthor;
-DROP table tbl_bookLoans;
-DROP table tbl_bookCopies;
-DROP table tbl_libraryBranch;
-DROP table tbl_books;
-DROP table tbl_publisher;
-DROP table tbl_borrower;
-
 USE db_library2test
 
 CREATE TABLE tbl_libraryBranch (
@@ -40,7 +32,6 @@ INSERT INTO tbl_publisher
 	('Random House', '400 Hahn Rd', '410-848-1900'),
 	('Wolters', '2 Pennsylvania Plaza', '212-594-3342')
 ;
-
 SELECT * FROM tbl_publisher;
 
 CREATE TABLE tbl_books (
@@ -73,7 +64,6 @@ INSERT INTO tbl_books
 	('187413', 'Blessings', 'Random House'),
 	('154742', 'The Amityville Horror', 'Reuters')
 ;
-
 SELECT * FROM tbl_books;
 
 CREATE TABLE tbl_bookAuthor (
@@ -105,7 +95,6 @@ INSERT INTO tbl_bookAuthor
 	('187413', 'Quindlen, Anna'),
 	('154742', 'Anson, Jay')
 ;
-
 SELECT * FROM tbl_bookAuthor;
 
 CREATE TABLE tbl_borrower (
@@ -126,7 +115,7 @@ INSERT INTO tbl_borrower
 	('38252526820792', 'Pratt,  Sarah', '12 Edgewater St.', '990-273-9065'), 
 	('16857647514452', 'Collins, Faun', '8250 Rockville Ave.', '322-923-0001'), 
 	('51618163986036', 'Riggin, Nathan', '9576 Old Riverview St.', '545-681-6706')
-
+;
 SELECT * FROM tbl_borrower;
 
 CREATE TABLE tbl_bookLoans (
@@ -192,7 +181,6 @@ INSERT INTO tbl_bookLoans
 	('124568','785','59289896342938','3/1/2019','4/15/2019'),
 	('118812','623','16857647514452','3/23/2019','5/7/2019')
 ;
-
 SELECT * FROM tbl_bookLoans;
 
 CREATE TABLE tbl_bookCopies (
@@ -227,25 +215,9 @@ INSERT INTO tbl_bookCopies
 	('154742', '785', '10'),
 	('201147', '424', '10')
 ;
-
 SELECT * FROM tbl_bookCopies;
 
-SELECT * FROM tbl_bookAuthor;
-SELECT * FROM tbl_bookLoans;
-SELECT * FROM tbl_bookCopies;
-SELECT * FROM tbl_libraryBranch;
-SELECT * FROM tbl_books;
-SELECT * FROM tbl_borrower;
-SELECT * FROM tbl_publisher;
-
-SELECT
-	tbl_libraryBranch.libraryBranch_name, tbl_bookCopies.bookCopies_NumberOfCopies, tbl_books.books_title FROM tbl_bookCopies
-	INNER JOIN tbl_books ON tbl_books.bookId = tbl_bookCopies.bookCopies_bookId
-	INNER JOIN tbl_libraryBranch ON tbl_libraryBranch.libraryBranch_id = tbl_bookCopies.bookCopies_branchId
-;
-	WHERE libraryBranch_name = 'Sharpstown' AND books_title = 'The Lost Tribe'
-;
-
+/*1.*/
 GO
 CREATE PROC dbo.uspGetBranchTitleCopies @Branch nvarchar(20), @Title nvarchar(50)
 AS
@@ -255,10 +227,10 @@ SELECT
 	INNER JOIN tbl_libraryBranch ON tbl_libraryBranch.libraryBranch_id = tbl_bookCopies.bookCopies_branchId
 WHERE libraryBranch_name = @Branch AND books_title = @Title
 GO
-
 EXEC dbo.uspGetBranchTitleCopies @Branch = 'Sharpstown', @Title = 'The Lost Tribe'
 ;
 
+/*2.*/
 GO
 CREATE PROC dbo.uspGetBranchCopies @Titles nvarchar(50)
 AS
@@ -268,49 +240,70 @@ SELECT
 	INNER JOIN tbl_libraryBranch ON tbl_libraryBranch.libraryBranch_id = tbl_bookCopies.bookCopies_branchId
 WHERE books_title = @Titles
 GO
-
 EXEC dbo.uspGetBranchCopies @Titles = 'The Lost Tribe'
 ;
 
+/*3.*/
 GO
-CREATE PROC dbo.uspGetBorrowers @Borrowers nvarchar(50), @BookId nvarchar(30)
+CREATE PROC dbo.uspGetBorrowers @Borrowers nvarchar(50), @BookId nvarchar(20)
 AS
 SELECT
 	tbl_borrower.borrower_name, tbl_bookLoans.bookLoans_bookId FROM tbl_borrower
 	INNER JOIN tbl_bookLoans ON tbl_bookLoans.bookLoans_cardNo = tbl_borrower.borrower_cardNo
 WHERE borrower_name = @Borrowers AND bookLoans_bookId = @BookId
 GO
-
 EXEC dbo.uspGetBorrowers @Borrowers = 'Doss, Angela', @BookId = ''
 ;
 
-
-
-
-DROP PROC dbo.uspGetBranchCopies;
-DROP PROC dbo.uspGetBranchTitleCopies;
-DROP PROC dbo.uspGetBorrowers;
-
-+ @Title = 'The Lost Tribe';
-/*SELECT
+/*4.*/
 GO
-CREATE PROC dbo.uspGetRando @Sport nvarchar(20)
+CREATE PROC dbo.uspGetDueDate @Branch nvarchar(20), @DueDate nvarchar(20)
 AS
-SELECT *
-FROM tbl_rando
-WHERE rando_sport = @Sport
+SELECT
+	tbl_books.books_title, tbl_borrower.borrower_name, tbl_borrower.borrower_address FROM tbl_bookLoans
+	INNER JOIN tbl_borrower ON tbl_borrower.borrower_cardNo = tbl_bookLoans.bookLoans_cardNo
+	INNER JOIN tbl_libraryBranch ON tbl_libraryBranch.libraryBranch_id = tbl_bookLoans.bookLoans_branchId
+	INNER JOIN tbl_books ON tbl_books.bookId = tbl_bookLoans.bookLoans_bookId
+WHERE libraryBranch_name = @Branch AND bookLoans_dateDue = @DueDate
 GO
+EXEC dbo.uspGetDueDate @Branch = 'Sharpstown', @DueDate = '4/10/2019'
+;
 
-CREATE PROC dbo.uspGetInfo @phone nvarchar(30) = NULL
+/*5.*/
+GO
+CREATE PROC dbo.uspGetBooksLoaned @BookCopies nvarchar(20)
 AS
-SELECT *
-FROM tbl_continfo
-WHERE continfo_phone = @phone
+SELECT
+	tbl_libraryBranch.libraryBranch_name, tbl_bookCopies.bookCopies_NumberOfCopies FROM tbl_bookLoans
+	INNER JOIN tbl_libraryBranch ON tbl_libraryBranch.libraryBranch_id = tbl_bookLoans.bookLoans_branchId
+	INNER JOIN tbl_bookCopies ON tbl_bookCopies.bookCopies_bookId = tbl_bookLoans.bookLoans_bookId
+WHERE bookCopies_NumberOfCopies >=1 
+GO
+EXEC dbo.uspGetBooksLoaned @BookCopies = '%'
+;
 
-EXEC dbo.uspGetInfo @phone = '303-338-5161'
+/*6.*/
+GO
+CREATE PROC dbo.uspGetBookLoanAmount @BookLoans nvarchar(20)
+AS
+SELECT
+	tbl_borrower.borrower_name, tbl_borrower.borrower_address FROM tbl_bookLoans
+	INNER JOIN tbl_borrower ON tbl_borrower.borrower_cardNo = tbl_bookLoans.bookLoans_cardNo
+WHERE bookLoans_cardNo >=5
+GO
+EXEC dbo.uspGetBookLoanAmount @BookLoans = '%'
+;
 
-EXEC dbo.uspGetRando @Sport = "Football";
-*/
-
-
-
+/*7.*/
+GO
+CREATE PROC dbo.uspGetKingBooks @Branch nvarchar(20), @Author nvarchar(50)
+AS
+SELECT
+	tbl_books.books_title, tbl_bookCopies.bookCopies_NumberOfCopies FROM tbl_bookCopies
+	INNER JOIN tbl_books ON tbl_books.bookId = tbl_bookCopies.bookCopies_bookId
+	INNER JOIN tbl_bookAuthor ON tbl_bookAuthor.bookAuthor_id = tbl_bookCopies.bookCopies_bookId
+	INNER JOIN tbl_libraryBranch ON tbl_libraryBranch.libraryBranch_id = tbl_bookCopies.bookCopies_branchId
+WHERE libraryBranch_name = @Branch AND bookAuthor_authorName = @Author
+GO
+EXEC dbo.uspGetKingBooks @Branch = 'Central', @Author = 'King, Stephen'
+;
