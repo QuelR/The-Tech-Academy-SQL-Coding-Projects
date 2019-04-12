@@ -131,7 +131,7 @@ INSERT INTO tbl_bookLoans
 	(bookLoans_bookId, bookLoans_branchId, bookLoans_cardNo, bookLoans_dateOut, bookLoans_dateDue)
 	VALUES
 	('116324','424','59289896342938','11/4/2018','12/19/2018'),
-	('201147','221','82354308927148','12/17/2018','1/31/2019'),
+	('201147','221','72767230882694','12/17/2018','1/31/2019'),
 	('102966','785','64337576896103','2/15/2019','4/1/2019'),
 	('145475','623','72767230882694','3/1/2019','4/15/2019'),
 	('245682','592','32434129068226','3/23/2019','5/7/2019'),
@@ -150,7 +150,7 @@ INSERT INTO tbl_bookLoans
 	('100045','592','32434129068226','3/20/2019','5/4/2019'),
 	('187413','592','32434129068226','3/20/2019','5/4/2019'),
 	('154742','785','51618163986036','2/14/2019','3/31/2019'),
-	('116324','424','82354308927148','3/1/2019','4/15/2019'),
+	('116324','424','72767230882694','3/1/2019','4/15/2019'),
 	('201147','221','64337576896103','3/23/2019','5/7/2019'),
 	('102966','785','72767230882694','2/1/2019','3/18/2019'),
 	('145475','623','32434129068226','3/8/2019','4/22/2019'),
@@ -171,7 +171,7 @@ INSERT INTO tbl_bookLoans
 	('187413','592','51618163986036','3/14/2019','4/28/2019'),
 	('154742','785','59289896342938','2/24/2019','4/10/2019'),
 	('102966','785','51618163986036','2/28/2019','4/14/2019'),
-	('145475','623','82354308927148','3/8/2019','4/22/2019'),
+	('145475','623','72767230882694','3/8/2019','4/22/2019'),
 	('245682','592','64337576896103','3/12/2019','4/26/2019'),
 	('145977','424','72767230882694','3/17/2019','5/1/2019'),
 	('265478','221','32434129068226','3/4/2019','4/18/2019'),
@@ -245,14 +245,14 @@ EXEC dbo.uspGetBranchCopies @Titles = 'The Lost Tribe'
 
 /*3.*/
 GO
-CREATE PROC dbo.uspGetBorrowers @Borrowers nvarchar(50), @BookId nvarchar(20)
+CREATE PROC dbo.uspGetBorrowers @Borrowers nvarchar(50)
 AS
 SELECT
-	tbl_borrower.borrower_name, tbl_bookLoans.bookLoans_bookId FROM tbl_borrower
-	INNER JOIN tbl_bookLoans ON tbl_bookLoans.bookLoans_cardNo = tbl_borrower.borrower_cardNo
-WHERE borrower_name = @Borrowers AND bookLoans_bookId = @BookId
+	tbl_borrower.borrower_name FROM tbl_borrower
+	FULL OUTER JOIN tbl_bookLoans ON tbl_bookLoans.bookLoans_cardNo = tbl_borrower.borrower_cardNo
+WHERE bookLoans_cardNo IS NULL
 GO
-EXEC dbo.uspGetBorrowers @Borrowers = 'Doss, Angela', @BookId = ''
+EXEC dbo.uspGetBorrowers @Borrowers = '*'
 ;
 
 /*4.*/
