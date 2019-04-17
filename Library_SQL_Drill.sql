@@ -131,8 +131,8 @@ INSERT INTO tbl_bookLoans
 	(bookLoans_bookId, bookLoans_branchId, bookLoans_cardNo, bookLoans_dateOut, bookLoans_dateDue)
 	VALUES
 	('116324','424','59289896342938','11/4/2018','12/19/2018'),
-	('201147','221','72767230882694','12/17/2018','1/31/2019'),
-	('102966','785','64337576896103','2/15/2019','4/1/2019'),
+	('201147','592','72767230882694','12/17/2018','1/31/2019'),
+	('102966','592','64337576896103','2/15/2019','4/1/2019'),
 	('145475','623','72767230882694','3/1/2019','4/15/2019'),
 	('245682','592','32434129068226','3/23/2019','5/7/2019'),
 	('145977','424','38252526820792','2/1/2019','3/18/2019'),
@@ -151,8 +151,8 @@ INSERT INTO tbl_bookLoans
 	('187413','592','32434129068226','3/20/2019','5/4/2019'),
 	('154742','785','51618163986036','2/14/2019','3/31/2019'),
 	('116324','424','72767230882694','3/1/2019','4/15/2019'),
-	('201147','221','64337576896103','3/23/2019','5/7/2019'),
-	('102966','785','72767230882694','2/1/2019','3/18/2019'),
+	('201147','592','64337576896103','3/23/2019','5/7/2019'),
+	('102966','592','72767230882694','2/1/2019','3/18/2019'),
 	('145475','623','32434129068226','3/8/2019','4/22/2019'),
 	('245682','592','38252526820792','3/14/2019','4/28/2019'),
 	('145977','424','16857647514452','2/24/2019','4/10/2019'),
@@ -170,7 +170,7 @@ INSERT INTO tbl_bookLoans
 	('100045','592','32434129068226','3/8/2019','4/22/2019'),
 	('187413','592','51618163986036','3/14/2019','4/28/2019'),
 	('154742','785','59289896342938','2/24/2019','4/10/2019'),
-	('102966','785','51618163986036','2/28/2019','4/14/2019'),
+	('102966','592','51618163986036','2/28/2019','4/14/2019'),
 	('145475','623','72767230882694','3/8/2019','4/22/2019'),
 	('245682','592','64337576896103','3/12/2019','4/26/2019'),
 	('145977','424','72767230882694','3/17/2019','5/1/2019'),
@@ -194,8 +194,8 @@ INSERT INTO tbl_bookCopies
 	(bookCopies_bookId, bookCopies_branchId, bookCopies_NumberOfCopies)
 	VALUES
 	('116324', '424', '10'),
-	('201147', '221', '10'),
-	('102966', '785', '10'),
+	('201147', '592', '10'),
+	('102966', '592', '10'),
 	('145475', '623', '10'),
 	('245682', '592', '10'),
 	('145977', '424', '10'),
@@ -254,6 +254,7 @@ WHERE bookLoans_cardNo IS NULL
 GO
 EXEC dbo.uspGetBorrowers @Borrowers = '*'
 ;
+DROP PROC dbo.uspGetBorrowers;
 
 /*4.*/
 GO
@@ -271,25 +272,26 @@ EXEC dbo.uspGetDueDate @Branch = 'Sharpstown', @DueDate = '4/10/2019'
 
 /*5.*/
 GO
-CREATE PROC dbo.uspGetBooksLoaned @BookCopies nvarchar(20)
+CREATE PROC dbo.uspGetBooksLoaned @BooksLoaned nvarchar(20)
 AS
-SELECT
-	tbl_libraryBranch.libraryBranch_name, tbl_bookCopies.bookCopies_NumberOfCopies FROM tbl_bookLoans
+SELECT COUNT(*) AS 'Loaned Books',
+	tbl_libraryBranch.libraryBranch_name FROM tbl_bookLoans
 	INNER JOIN tbl_libraryBranch ON tbl_libraryBranch.libraryBranch_id = tbl_bookLoans.bookLoans_branchId
 	INNER JOIN tbl_bookCopies ON tbl_bookCopies.bookCopies_bookId = tbl_bookLoans.bookLoans_bookId
-WHERE bookCopies_NumberOfCopies >=1 
+GROUP BY tbl_libraryBranch.libraryBranch_name
 GO
-EXEC dbo.uspGetBooksLoaned @BookCopies = '%'
+EXEC dbo.uspGetBooksLoaned @BooksLoaned = '%'
 ;
 
 /*6.*/
 GO
 CREATE PROC dbo.uspGetBookLoanAmount @BookLoans nvarchar(20)
 AS
-SELECT
+SELECT COUNT (*),
 	tbl_borrower.borrower_name, tbl_borrower.borrower_address FROM tbl_bookLoans
 	INNER JOIN tbl_borrower ON tbl_borrower.borrower_cardNo = tbl_bookLoans.bookLoans_cardNo
-WHERE bookLoans_cardNo >=5
+GROUP BY tbl_borrower.borrower_name, tbl_borrower.borrower_address
+HAVING COUNT (*) >5
 GO
 EXEC dbo.uspGetBookLoanAmount @BookLoans = '%'
 ;
@@ -298,12 +300,13 @@ EXEC dbo.uspGetBookLoanAmount @BookLoans = '%'
 GO
 CREATE PROC dbo.uspGetKingBooks @Branch nvarchar(20), @Author nvarchar(50)
 AS
-SELECT
-	tbl_books.books_title, tbl_bookCopies.bookCopies_NumberOfCopies FROM tbl_bookCopies
+SELECT tbl_bookCopies.bookCopies_NumberOfCopies COUNT,
+	tbl_books.books_title FROM tbl_bookCopies
 	INNER JOIN tbl_books ON tbl_books.bookId = tbl_bookCopies.bookCopies_bookId
 	INNER JOIN tbl_bookAuthor ON tbl_bookAuthor.bookAuthor_id = tbl_bookCopies.bookCopies_bookId
 	INNER JOIN tbl_libraryBranch ON tbl_libraryBranch.libraryBranch_id = tbl_bookCopies.bookCopies_branchId
 WHERE libraryBranch_name = @Branch AND bookAuthor_authorName = @Author
+GROUP BY tbl_books.books_title, tbl_bookCopies.bookCopies_NumberOfCopies
 GO
 EXEC dbo.uspGetKingBooks @Branch = 'Central', @Author = 'King, Stephen'
 ;
